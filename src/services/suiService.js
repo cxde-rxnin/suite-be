@@ -1,0 +1,160 @@
+const {
+    SuiClient,
+    getFullnodeUrl,
+    SuiHTTPTransport,
+} = require('@mysten/sui.js/client');
+const WebSocket = require('ws');
+
+const {
+    Ed25519Keypair,
+    fromB64,
+} = require('@mysten/sui.js/keypairs/ed25519');
+
+const {
+    TransactionBlock,
+} = require('@mysten/sui.js/transactions');
+
+const {
+    SUI_CLOCK_OBJECT_ID
+} = require('@mysten/sui.js/utils');
+
+require('dotenv').config();
+
+const getProvider = () => {
+    // Try a simpler WebSocket configuration
+    return new SuiClient({
+        url: getFullnodeUrl(process.env.SUI_NETWORK || 'devnet'),
+        transport: new SuiHTTPTransport({
+            url: getFullnodeUrl(process.env.SUI_NETWORK || 'devnet'),
+            WebSocketConstructor: WebSocket,
+        }),
+    });
+};
+
+const getAdminSigner = () => {
+    const keypair = Ed25519Keypair.fromSecretKey(fromB64(process.env.ADMIN_SECRET_KEY));
+    return keypair;
+};
+
+// Function for admin to sign and execute a transaction
+const executeTransaction = async (txb) => {
+    const signer = getAdminSigner();
+    const provider = getProvider();
+    return await provider.signAndExecuteTransactionBlock({
+        signer,
+        transactionBlock: txb,
+    });
+};
+
+// Fetches details for multiple objects at once
+const getObjectDetails = async (objectIds) => {
+    const provider = getProvider();
+    if (objectIds.length === 0) return [];
+    const objects = await provider.multiGetObjects({
+        ids: objectIds,
+        options: { showContent: true, showDisplay: true },
+    });
+    return objects
+        .filter(obj => obj.data)
+        .map(obj => ({
+            objectId: obj.data.objectId,
+            ...obj.data.content.fields
+        }));
+};
+
+// ============= Transaction Block Builders =============
+// These functions create unsigned transactions for the frontend to sign.
+
+const createHotelTx = (name, physicalAddress) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::create_hotel`,
+        arguments: [txb.pure(name), txb.pure(physicalAddress)],
+    });
+    return txb;
+};
+
+const listRoomTx = (hotelId, pricePerDay, imageUrl) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::list_room`,
+        arguments: [txb.object(hotelId), txb.pure(pricePerDay)],
+    });
+    return txb;
+};
+
+const bookRoomTx = ({ roomId, hotelId, fullName, email, phone, startDate, endDate, paymentCoinId }) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::book_room`,
+        arguments: [
+            txb.object(roomId),
+            txb.object(hotelId),
+            txb.pure(fullName),
+            txb.pure(email),
+            txb.pure(phone),
+            txb.pure(startDate), // as string
+            txb.pure(endDate),   // as string
+            txb.object(paymentCoinId),
+            txb.object(SUI_CLOCK_OBJECT_ID)
+        ],
+    });
+    return txb;
+};
+
+const cancelReservationTx = ({ reservationId, roomId, hotelId }) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::cancel_reservation`,
+        arguments: [
+            txb.object(reservationId),
+            txb.object(roomId),
+            txb.object(hotelId),
+            txb.object(SUI_CLOCK_OBJECT_ID)
+        ],
+    });
+    return txb;
+};
+
+const leaveReviewTx = ({ reservationId, hotelId, rating, comment }) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::leave_review`,
+        arguments: [
+            txb.object(reservationId),
+            txb.object(hotelId),
+            txb.pure(rating),
+            txb.pure(comment),
+            txb.object(SUI_CLOCK_OBJECT_ID)
+        ],
+    });
+    return txb;
+};
+
+// Reschedule reservation transaction builder
+const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate, newEndDate }) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::reschedule_reservation`,
+        arguments: [
+            txb.object(reservationId),
+            txb.object(roomId),
+            txb.object(hotelId),
+            txb.pure(newStartDate),
+            txb.pure(newEndDate),
+            txb.object(SUI_CLOCK_OBJECT_ID)
+        ],
+    });
+    return txb;
+};
+
+module.exports = {
+    getProvider,
+    getObjectDetails,
+    createHotelTx,
+    listRoomTx,
+    bookRoomTx,
+    cancelReservationTx,
+    leaveReviewTx,
+    rescheduleReservationTx,
+};

@@ -1,0 +1,12 @@
+[package]
+name = "suite"
+edition = "2024.beta"
+
+[dependencies]
+
+[addresses]
+suite = "0x0"
+
+[dev-dependencies]
+
+[dev-addresses]
