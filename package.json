@@ -1,0 +1,26 @@
+{
+  "name": "suite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mysten/sui.js": "^0.54.1",
+    "@mysten/wallet-kit": "^0.8.6",
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.16.4",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemon": "^3.1.10",
+    "ws": "^8.18.3"
+  }
+}
