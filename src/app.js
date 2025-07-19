@@ -17,7 +17,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve API documentation at /api/docs
+// Serve API documentation at /api/docs lets hope it doesnt crash again
 app.get('/api/docs', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
