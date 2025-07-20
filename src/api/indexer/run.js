@@ -1,4 +1,3 @@
-// NOTE: This uses the ES Module `import` syntax, which Vercel handles automatically.
 import connectDB from '../../config/db';
 import Hotel from '../../models/Hotel';
 import Room from '../../models/Room';
