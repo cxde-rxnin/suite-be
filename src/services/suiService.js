@@ -7,8 +7,11 @@ const WebSocket = require('ws');
 
 const {
     Ed25519Keypair,
-    fromB64,
 } = require('@mysten/sui.js/keypairs/ed25519');
+
+const {
+    decodeSuiPrivateKey,
+} = require('@mysten/sui.js/cryptography');
 
 const {
     TransactionBlock,
@@ -32,7 +35,9 @@ const getProvider = () => {
 };
 
 const getAdminSigner = () => {
-    const keypair = Ed25519Keypair.fromSecretKey(fromB64(process.env.ADMIN_SECRET_KEY));
+    // Decode the Sui private key format (suiprivkey1...)
+    const { secretKey } = decodeSuiPrivateKey(process.env.ADMIN_SECRET_KEY);
+    const keypair = Ed25519Keypair.fromSecretKey(secretKey);
     return keypair;
 };
 
@@ -40,10 +45,24 @@ const getAdminSigner = () => {
 const executeTransaction = async (txb) => {
     const signer = getAdminSigner();
     const provider = getProvider();
-    return await provider.signAndExecuteTransactionBlock({
-        signer,
-        transactionBlock: txb,
-    });
+    
+    try {
+        const result = await provider.signAndExecuteTransactionBlock({
+            signer,
+            transactionBlock: txb,
+            options: {
+                showEffects: true,
+                showObjectChanges: true,
+                showEvents: true,
+            },
+        });
+        
+        console.log('Transaction executed successfully:', result.digest);
+        return result;
+    } catch (error) {
+        console.error('Transaction execution failed:', error);
+        throw error;
+    }
 };
 
 // Fetches details for multiple objects at once
@@ -75,11 +94,17 @@ const createHotelTx = (name, physicalAddress) => {
 };
 
 const listRoomTx = (hotelId, pricePerDay, imageUrl) => {
+    console.log('Creating room transaction with:', { hotelId, pricePerDay, imageUrl });
     const txb = new TransactionBlock();
     txb.moveCall({
         target: `${process.env.PACKAGE_ID}::hotel_booking::list_room`,
-        arguments: [txb.object(hotelId), txb.pure(pricePerDay)],
+        arguments: [
+            txb.object(hotelId), 
+            txb.pure(pricePerDay),
+            txb.pure(imageUrl || '') // This is the image_blob_id parameter
+        ],
     });
+    console.log('Transaction block created successfully');
     return txb;
 };
 
@@ -157,4 +182,5 @@ module.exports = {
     cancelReservationTx,
     leaveReviewTx,
     rescheduleReservationTx,
+    executeTransaction,
 };
