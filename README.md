@@ -41,6 +41,7 @@ This document describes the data sent and received by the backend API and the Mo
     - `total_cost`: number
     - `is_active`: boolean
 
+
 #### 4. Transactions (POST endpoints)
 - **Create Hotel**
   - **Receives:** `{ name, physicalAddress }`
@@ -60,6 +61,15 @@ This document describes the data sent and received by the backend API and the Mo
 - **Reschedule Reservation**
   - **Receives:** `{ reservationId, roomId, hotelId, newStartDate, newEndDate }`
   - **Sends:** `{ transactionBlock }`
+
+  > This endpoint prepares a transaction to reschedule an existing reservation. The backend uses the following parameters:
+  > - `reservationId`: The reservation to update
+  > - `roomId`: The room associated with the reservation
+  > - `hotelId`: The hotel associated with the reservation
+  > - `newStartDate`: The new start date (string)
+  > - `newEndDate`: The new end date (string)
+  >
+  > Returns a serialized unsigned transaction block for the frontend wallet to sign and execute on-chain.
 
 ---
 

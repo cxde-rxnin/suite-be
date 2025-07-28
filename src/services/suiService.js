@@ -158,6 +158,24 @@ const leaveReviewTx = ({ reservationId, hotelId, rating, comment }) => {
 
 
 
+// Reschedule Reservation Transaction
+// Assumes Move function: reschedule_reservation(reservation_id, room_id, hotel_id, new_start_date, new_end_date, clock)
+const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate, newEndDate }) => {
+    const txb = new TransactionBlock();
+    txb.moveCall({
+        target: `${process.env.PACKAGE_ID}::hotel_booking::reschedule_reservation`,
+        arguments: [
+            txb.object(reservationId),
+            txb.object(roomId),
+            txb.object(hotelId),
+            txb.pure(newStartDate),
+            txb.pure(newEndDate),
+            txb.object(SUI_CLOCK_OBJECT_ID)
+        ],
+    });
+    return txb;
+};
+
 module.exports = {
     getProvider,
     getObjectDetails,
@@ -166,5 +184,6 @@ module.exports = {
     bookRoomTx,
     cancelReservationTx,
     leaveReviewTx,
+    rescheduleReservationTx,
     executeTransaction,
 };

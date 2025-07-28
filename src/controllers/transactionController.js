@@ -47,10 +47,12 @@ const buildListRoom = async (req, res) => {
     }
 };
 
+
 const buildCreateHotel = buildTransaction(createHotelTx);
 const buildBookRoom = buildTransaction(bookRoomTx);
 const buildCancelReservation = buildTransaction(cancelReservationTx);
 const buildLeaveReview = buildTransaction(leaveReviewTx);
+const buildRescheduleReservation = buildTransaction(rescheduleReservationTx);
 // ...existing code...
 
 module.exports = {

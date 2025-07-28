@@ -177,12 +177,12 @@ body {
     }
   },
   "paths": {
-    "/": {
+    "/all": {
       "get": {
-        "summary": "GET /",
-        "description": "GET endpoint for /",
+        "summary": "GET /all",
+        "description": "GET endpoint for /all",
         "tags": [
-          "default"
+          "All"
         ],
         "parameters": [],
         "requestBody": null,
@@ -193,14 +193,24 @@ body {
         }
       }
     },
-    "/api/hotels": {
-      "middleware": {
-        "summary": "Middleware for /api/hotels",
-        "description": "Middleware function applied to /api/hotels and all sub-routes",
+    "/{hotelId}/rooms": {
+      "get": {
+        "summary": "GET /:hotelId/rooms",
+        "description": "GET endpoint for /:hotelId/rooms",
         "tags": [
-          "Api"
+          "Rooms"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "hotelId",
+            "in": "path",
+            "description": "Path parameter: hotelId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": null,
         "responses": {
           "200": {
@@ -209,12 +219,12 @@ body {
         }
       }
     },
-    "/api/transactions": {
-      "middleware": {
-        "summary": "Middleware for /api/transactions",
-        "description": "Middleware function applied to /api/transactions and all sub-routes",
+    "/reservations": {
+      "get": {
+        "summary": "GET /reservations",
+        "description": "GET endpoint for /reservations",
         "tags": [
-          "Api"
+          "Reservations"
         ],
         "parameters": [],
         "requestBody": null,
@@ -321,12 +331,12 @@ body {
         }
       }
     },
-    "/all": {
+    "/api/docs": {
       "get": {
-        "summary": "GET /all",
-        "description": "GET endpoint for /all",
+        "summary": "GET /api/docs",
+        "description": "GET endpoint for /api/docs",
         "tags": [
-          "All"
+          "Api"
         ],
         "parameters": [],
         "requestBody": null,
@@ -337,24 +347,14 @@ body {
         }
       }
     },
-    "/{hotelId}/rooms": {
+    "/": {
       "get": {
-        "summary": "GET /:hotelId/rooms",
-        "description": "GET endpoint for /:hotelId/rooms",
+        "summary": "GET /",
+        "description": "GET endpoint for /",
         "tags": [
-          "Rooms"
+          "default"
         ],
-        "parameters": [
-          {
-            "name": "hotelId",
-            "in": "path",
-            "description": "Path parameter: hotelId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": null,
         "responses": {
           "200": {
@@ -363,12 +363,28 @@ body {
         }
       }
     },
-    "/reservations": {
-      "get": {
-        "summary": "GET /reservations",
-        "description": "GET endpoint for /reservations",
+    "/api/hotels": {
+      "middleware": {
+        "summary": "Middleware for /api/hotels",
+        "description": "Middleware function applied to /api/hotels and all sub-routes",
         "tags": [
-          "Reservations"
+          "Api"
+        ],
+        "parameters": [],
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+    "/api/transactions": {
+      "middleware": {
+        "summary": "Middleware for /api/transactions",
+        "description": "Middleware function applied to /api/transactions and all sub-routes",
+        "tags": [
+          "Api"
         ],
         "parameters": [],
         "requestBody": null,
