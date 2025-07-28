@@ -13,7 +13,7 @@ dependencies = [
 
 [[move.package]]
 id = "Bridge"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/bridge" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "209f0da8e316", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -23,11 +23,11 @@ dependencies = [
 
 [[move.package]]
 id = "MoveStdlib"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "209f0da8e316", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
 id = "Sui"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "209f0da8e316", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -35,7 +35,7 @@ dependencies = [
 
 [[move.package]]
 id = "SuiSystem"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/sui-system" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "209f0da8e316", subdir = "crates/sui-framework/packages/sui-system" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -49,14 +49,8 @@ flavor = "sui"
 
 [env]
 
-[env.devnet]
-chain-id = "89671445"
-original-published-id = "0x266e23b1545e0cd0781ee138592de6037c8c5248a8d93f46b0bdf0ac6ae09253"
-latest-published-id = "0x266e23b1545e0cd0781ee138592de6037c8c5248a8d93f46b0bdf0ac6ae09253"
-published-version = "1"
-
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0x7dac9356cbe4b4551ded62f297dd2a74e61414d0d618a8c919203a091408a833"
-latest-published-id = "0x7dac9356cbe4b4551ded62f297dd2a74e61414d0d618a8c919203a091408a833"
+original-published-id = "0x8caafd0192ca0ef9046c70284569be176dff5b2aca25f1eee0cb51814886fda3"
+latest-published-id = "0x8caafd0192ca0ef9046c70284569be176dff5b2aca25f1eee0cb51814886fda3"
 published-version = "1"
