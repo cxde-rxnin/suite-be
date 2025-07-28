@@ -4,7 +4,31 @@ const { getProvider, getObjectDetails } = require('../services/suiService');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 
+// Get all Hotel objects shared on the network
 const getAllHotels = async (req, res) => {
+    try {
+        const provider = getProvider();
+        // Workaround: Use events API to find all HotelCreated events, then fetch objects by ID
+        const events = await provider.queryEvents({
+            query: {
+                MoveModule: {
+                    package: process.env.PACKAGE_ID,
+                    module: 'hotel_booking',
+                },
+            },
+            limit: 1000, // adjust as needed
+        });
+        const hotelIds = events.data
+            .filter(e => e.type.endsWith('HotelCreated'))
+            .map(e => e.parsedJson.hotel_id || e.parsedJson.hotelId || e.parsedJson.id);
+        const hotels = await getObjectDetails(hotelIds);
+        res.status(200).json(hotels);
+    } catch (error) {
+        console.error('Error fetching hotels:', error);
+        res.status(500).json({ error: 'Failed to fetch hotels', details: error.message });
+    }
+};
+
 // Get a single hotel by objectId
 const getHotel = async (req, res) => {
     try {
@@ -28,29 +52,7 @@ const getHotelRoom = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch room', details: error.message });
     }
 };
-    try {
-        const provider = getProvider();
-        
-        // Workaround: Use events API to find all HotelCreated events, then fetch objects by ID
-        const events = await provider.queryEvents({
-            query: {
-                MoveModule: {
-                    package: process.env.PACKAGE_ID,
-                    module: 'hotel_booking',
-                },
-            },
-            limit: 1000, // adjust as needed
-        });
-        const hotelIds = events.data
-            .filter(e => e.type.endsWith('HotelCreated'))
-            .map(e => e.parsedJson.hotel_id || e.parsedJson.hotelId || e.parsedJson.id);
-        const hotels = await getObjectDetails(hotelIds);
-        res.status(200).json(hotels);
-    } catch (error) {
-        console.error('Error fetching hotels:', error);
-        res.status(500).json({ error: 'Failed to fetch hotels', details: error.message });
-    }
-};
+// ...existing code...
 
 // Get all rooms associated with a specific hotel
 const getHotelRooms = async (req, res) => {
@@ -114,8 +116,8 @@ const { reviewHotel, getHotelReviews } = require('./reviewController');
 module.exports = {
     getAllHotels,
     getHotel,
-    getHotelRooms,
     getHotelRoom,
+    getHotelRooms,
     getUserReservations,
     reviewHotel,
     getHotelReviews
