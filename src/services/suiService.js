@@ -156,22 +156,7 @@ const leaveReviewTx = ({ reservationId, hotelId, rating, comment }) => {
     return txb;
 };
 
-// ...existing code...
-const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate, newEndDate }) => {
-    const txb = new TransactionBlock();
-    txb.moveCall({
-        target: `${process.env.PACKAGE_ID}::hotel_booking::reschedule_reservation`,
-        arguments: [
-            txb.object(reservationId),
-            txb.object(roomId),
-            txb.object(hotelId),
-            txb.pure(newStartDate),
-            txb.pure(newEndDate),
-            txb.object(SUI_CLOCK_OBJECT_ID)
-        ],
-    });
-    return txb;
-};
+
 
 module.exports = {
     getProvider,
@@ -181,6 +166,5 @@ module.exports = {
     bookRoomTx,
     cancelReservationTx,
     leaveReviewTx,
-    rescheduleReservationTx,
     executeTransaction,
 };
