@@ -8,6 +8,7 @@ This document describes the data sent and received by the backend API and the Mo
 
 ### Endpoints & Data
 
+
 #### 1. Hotels
 - **GET /hotels**
   - **Receives:** None
@@ -17,6 +18,17 @@ This document describes the data sent and received by the backend API and the Mo
     - `physical_address`: string
     - `owner`: address
     - `treasury`: number (SUI balance)
+    - `imageUrl`: string (image URL, dummy data seeded)
+
+- **POST /api/transactions/hotels/:hotelId/review**
+  - **Receives:** `{ reservationId, guest, rating, comment }`
+  - **Sends:** The created review object
+
+- **GET /api/transactions/hotels/:hotelId/reviews**
+  - **Receives:** None
+  - **Sends:** Array of review objects for the hotel
+
+> Dummy hotels, rooms, and reviews (with image URLs) are seeded by the database seeder scripts for development/testing.
 
 #### 2. Rooms
 - **GET /hotels/:hotelId/rooms**

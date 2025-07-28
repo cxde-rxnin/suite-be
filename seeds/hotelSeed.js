@@ -12,6 +12,7 @@ const hotels = [
   {
     name: 'Grand Plaza',
     physicalAddress: 'New York',
+    imageUrl: 'https://dummyimage.com/600x400/cccccc/000000&text=Grand+Plaza',
     rooms: [
       { number: 101, type: 'Single', price: 120 },
       { number: 102, type: 'Double', price: 180 }
@@ -20,6 +21,7 @@ const hotels = [
   {
     name: 'Seaside Resort',
     physicalAddress: 'Miami',
+    imageUrl: 'https://dummyimage.com/600x400/cccccc/000000&text=Seaside+Resort',
     rooms: [
       { number: 201, type: 'Suite', price: 300 },
       { number: 202, type: 'Single', price: 110 }
@@ -58,6 +60,8 @@ async function seed() {
     await Hotel.deleteMany({});
     await Room.deleteMany({});
 
+
+    const createdHotelIds = [];
     for (const hotelData of hotels) {
       const { rooms, ...hotelInfo } = hotelData;
 
@@ -73,6 +77,7 @@ async function seed() {
         continue;
       }
 
+      createdHotelIds.push(onChainHotelId);
       console.log(`Hotel created on-chain with ID: ${onChainHotelId}`);
 
       // 2. Off-chain: Save to DB
@@ -107,13 +112,17 @@ async function seed() {
           hotelId: onChainHotelId,
           pricePerDay: roomData.price,
           isBooked: false,
-          cloudinaryPublicId: `seed_room_${roomData.number}_${Date.now()}`, // Generate a unique dummy ID
+          cloudinaryPublicId: `seed_room_${roomData.number}_${Date.now()}`,
           imageUrl: dummyImageUrl
         });
         await room.save();
         console.log(`Room ${roomData.number} saved to database`);
       }
     }
+
+    // Add dummy reviews for each hotel
+    const seedReviews = require('./reviewSeed');
+    await seedReviews(createdHotelIds);
 
     console.log('Seeding complete.');
     mongoose.disconnect();

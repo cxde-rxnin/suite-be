@@ -28,3 +28,10 @@ router.post('/leave-review', transactionController.buildLeaveReview);
 router.post('/reschedule-reservation', transactionController.buildRescheduleReservation);
 
 module.exports = router;
+
+// Hotel endpoints (not transaction blocks)
+const hotelController = require('../controllers/hotelController');
+router.get('/hotels/:hotelId', hotelController.getHotel);
+router.get('/rooms/:roomId', hotelController.getHotelRoom);
+router.post('/hotels/:hotelId/review', hotelController.reviewHotel);
+router.get('/hotels/:hotelId/reviews', hotelController.getHotelReviews);

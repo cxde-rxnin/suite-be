@@ -1,7 +1,33 @@
 const { getProvider, getObjectDetails } = require('../services/suiService');
 
 // Get all Hotel objects shared on the network
+const Hotel = require('../models/Hotel');
+const Room = require('../models/Room');
+
 const getAllHotels = async (req, res) => {
+// Get a single hotel by objectId
+const getHotel = async (req, res) => {
+    try {
+        const { hotelId } = req.params;
+        const hotel = await Hotel.findOne({ objectId: hotelId });
+        if (!hotel) return res.status(404).json({ error: 'Hotel not found' });
+        res.status(200).json(hotel);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch hotel', details: error.message });
+    }
+};
+
+// Get a single hotel room by objectId
+const getHotelRoom = async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const room = await Room.findOne({ objectId: roomId });
+        if (!room) return res.status(404).json({ error: 'Room not found' });
+        res.status(200).json(room);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch room', details: error.message });
+    }
+};
     try {
         const provider = getProvider();
         
@@ -83,8 +109,14 @@ const getUserReservations = async (req, res) => {
     }
 };
 
+const { reviewHotel, getHotelReviews } = require('./reviewController');
+
 module.exports = {
     getAllHotels,
+    getHotel,
     getHotelRooms,
-    getUserReservations
+    getHotelRoom,
+    getUserReservations,
+    reviewHotel,
+    getHotelReviews
 };
