@@ -15,10 +15,11 @@ export default async function handler(req, res) {
     if (req.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
         return res.status(401).end('Unauthorized');
     }
-
+    
     try {
         await connectDB();
-        console.log('[Indexer Cron] Job starting...');
+        // Removed cron-related logs
+        // console.log('[Indexer Cron] Job starting...');
 
         const provider = getProvider();
         
@@ -37,15 +38,18 @@ export default async function handler(req, res) {
         });
 
         if (!result.data || result.data.length === 0) {
-            console.log('[Indexer Cron] No new events found.');
+            // Removed cron-related logs
+            // console.log('[Indexer Cron] No new events found.');
             return res.status(200).json({ message: 'No new events.' });
         }
 
-        console.log(`[Indexer Cron] Found ${result.data.length} new events to process.`);
+        // Removed cron-related logs
+        // console.log(`[Indexer Cron] Found ${result.data.length} new events to process.`);
         
         // 4. PROCESS EACH NEW EVENT
         for (const event of result.data) {
-            console.log(`[Indexer Cron] Processing event type: ${event.type}`);
+            // Removed cron-related logs
+            // console.log(`[Indexer Cron] Processing event type: ${event.type}`);
             // --- This is your existing logic from the old indexer.js ---
             switch (event.type) {
                 // Room listed
@@ -180,15 +184,18 @@ export default async function handler(req, res) {
                 { cursor: newCursor.eventSeq, txDigest: newCursor.txDigest },
                 { upsert: true }
             );
-            console.log(`[Indexer Cron] Job finished. New cursor set to ${newCursor.eventSeq}.`);
+            // Removed cron-related logs
+            // console.log(`[Indexer Cron] Job finished. New cursor set to ${newCursor.eventSeq}.`);
         } else {
-            console.log('[Indexer Cron] Job finished. No new cursor returned.');
+            // Removed cron-related logs
+            // console.log('[Indexer Cron] Job finished. No new cursor returned.');
         }
 
         res.status(200).json({ message: `Successfully processed ${result.data.length} events.` });
 
     } catch (error) {
-        console.error('[Indexer Cron] CRITICAL ERROR:', error);
+        // Removed cron-related logs
+        // console.error('[Indexer Cron] CRITICAL ERROR:', error);
         res.status(500).json({ error: 'Failed to run indexer job.', details: error.message });
     }
 }

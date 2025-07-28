@@ -156,7 +156,7 @@ const leaveReviewTx = ({ reservationId, hotelId, rating, comment }) => {
     return txb;
 };
 
-// Reschedule reservation transaction builder
+// ...existing code...
 const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate, newEndDate }) => {
     const txb = new TransactionBlock();
     txb.moveCall({

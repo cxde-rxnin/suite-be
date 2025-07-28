@@ -24,7 +24,7 @@ router.post('/cancel-reservation', transactionController.buildCancelReservation)
 // POST /api/transactions/leave-review
 router.post('/leave-review', transactionController.buildLeaveReview);
 
-// POST /api/transactions/reschedule-reservation
+// ...existing code...
 router.post('/reschedule-reservation', transactionController.buildRescheduleReservation);
 
 module.exports = router;
