@@ -6,7 +6,11 @@ const transactionController = require('../controllers/transactionController');
 // The frontend will then ask the user's wallet to sign and execute it.
 
 // POST /api/transactions/create-hotel
-router.post('/create-hotel', transactionController.buildCreateHotel);
+router.post(
+    '/create-hotel',
+    transactionController.upload.single('image'),
+    transactionController.buildCreateHotel
+);
 
 // POST /api/transactions/list-room
 router.post(

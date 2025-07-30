@@ -11,6 +11,8 @@ const {
 // This controller's job is to prepare a transaction block and send it to the frontend.
 // The frontend's wallet will then sign and execute it.
 
+
+// Generic builder for endpoints that do not require file upload
 const buildTransaction = (builder) => async (req, res) => {
     try {
         const txb = builder(req.body);
@@ -19,6 +21,22 @@ const buildTransaction = (builder) => async (req, res) => {
     } catch (error) {
         console.error(`Error building transaction:`, error);
         res.status(400).json({ error: 'Failed to build transaction', details: error.message });
+    }
+};
+
+// Hotel creation with image upload
+const buildCreateHotel = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Image file is required.' });
+        }
+        const imageUrl = req.file.path; // Cloudinary URL
+        const { name, physicalAddress } = req.body;
+        const txb = createHotelTx(name, physicalAddress, imageUrl);
+        const transactionBlock = txb.serialize();
+        res.status(200).json({ transactionBlock });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to build create hotel transaction', details: error.message });
     }
 };
 
@@ -48,7 +66,7 @@ const buildListRoom = async (req, res) => {
 };
 
 
-const buildCreateHotel = buildTransaction(createHotelTx);
+// const buildCreateHotel = buildTransaction(createHotelTx);
 const buildBookRoom = buildTransaction(bookRoomTx);
 const buildCancelReservation = buildTransaction(cancelReservationTx);
 const buildLeaveReview = buildTransaction(leaveReviewTx);

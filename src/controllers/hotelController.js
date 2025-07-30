@@ -22,7 +22,16 @@ const getAllHotels = async (req, res) => {
             .filter(e => e.type.endsWith('HotelCreated'))
             .map(e => e.parsedJson.hotel_id || e.parsedJson.hotelId || e.parsedJson.id);
         const hotels = await getObjectDetails(hotelIds);
-        res.status(200).json(hotels);
+        // Attach imageUrl from DB if available
+        const dbHotels = await Hotel.find({ objectId: { $in: hotelIds } });
+        const hotelsWithImages = hotels.map(hotel => {
+            const dbHotel = dbHotels.find(h => h.objectId === hotel.objectId);
+            return {
+                ...hotel,
+                imageUrl: dbHotel ? dbHotel.imageUrl : null
+            };
+        });
+        res.status(200).json(hotelsWithImages);
     } catch (error) {
         console.error('Error fetching hotels:', error);
         res.status(500).json({ error: 'Failed to fetch hotels', details: error.message });
@@ -35,7 +44,11 @@ const getHotel = async (req, res) => {
         const { hotelId } = req.params;
         const hotel = await Hotel.findOne({ objectId: hotelId });
         if (!hotel) return res.status(404).json({ error: 'Hotel not found' });
-        res.status(200).json(hotel);
+        // Always include imageUrl
+        res.status(200).json({
+            ...hotel.toObject(),
+            imageUrl: hotel.imageUrl || null
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch hotel', details: error.message });
     }
@@ -47,7 +60,11 @@ const getHotelRoom = async (req, res) => {
         const { roomId } = req.params;
         const room = await Room.findOne({ objectId: roomId });
         if (!room) return res.status(404).json({ error: 'Room not found' });
-        res.status(200).json(room);
+        // Always include imageUrl
+        res.status(200).json({
+            ...room.toObject(),
+            imageUrl: room.imageUrl || null
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch room', details: error.message });
     }
@@ -74,7 +91,15 @@ const getHotelRooms = async (req, res) => {
             .filter(e => e.type.endsWith('RoomListed'))
             .map(e => e.parsedJson.room_id || e.parsedJson.roomId || e.parsedJson.id);
         const allRooms = await getObjectDetails(roomIds);
-        const filteredRooms = allRooms.filter(room => room.hotel_id === hotelId);
+        // Attach imageUrl from DB if available
+        const dbRooms = await Room.find({ hotelId });
+        const filteredRooms = allRooms.filter(room => room.hotel_id === hotelId).map(room => {
+            const dbRoom = dbRooms.find(r => r.objectId === room.objectId);
+            return {
+                ...room,
+                imageUrl: dbRoom ? dbRoom.imageUrl : null
+            };
+        });
         res.status(200).json(filteredRooms);
     } catch (error) {
         console.error('Error fetching rooms:', error);

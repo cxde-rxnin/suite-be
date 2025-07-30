@@ -56,10 +56,10 @@ This document describes the data sent and received by the backend API and the Mo
 
 #### 4. Transactions (POST endpoints)
 - **Create Hotel**
-  - **Receives:** `{ name, physicalAddress }`
+  - **Receives:** `{ name, physicalAddress }` + image file (multipart, field name: `image`)
   - **Sends:** `{ transactionBlock }` (serialized unsigned transaction)
 - **List Room**
-  - **Receives:** `{ hotelId, pricePerDay }` + image file (multipart)
+  - **Receives:** `{ hotelId, pricePerDay }` + image file (multipart, field name: `image`)
   - **Sends:** `{ transactionBlock }`
 - **Book Room**
   - **Receives:** `{ roomId, hotelId, fullName, email, phone, startDate, endDate, paymentCoinId }`
