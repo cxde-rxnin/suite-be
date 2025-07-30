@@ -11,9 +11,10 @@ router.get('/all', hotelController.getAllHotels);
 router.get('/:hotelId/rooms', hotelController.getHotelRooms);
 
 
-// GET /api/hotels/reviews/:hotelId
+
+// GET /api/hotels/:hotelId/reviews
 // Returns reviews for a specific hotel
-// router.get('/reviews/:hotelId', hotelController.getHotelReviews); // Uncomment if getHotelReviews is defined and exported
+router.get('/:hotelId/reviews', hotelController.getHotelReviews);
 
 // GET /api/hotels/reservations
 // Returns reservations for a specific user (by guestAddress query param)
