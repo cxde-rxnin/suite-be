@@ -6,6 +6,11 @@ const hotelController = require('../controllers/hotelController');
 // Returns a list of all hotels
 router.get('/all', hotelController.getAllHotels);
 
+
+// GET /api/hotels/:hotelId
+// Returns a single hotel by objectId
+router.get('/:hotelId', hotelController.getHotel);
+
 // GET /api/hotels/:hotelId/rooms
 // Returns rooms for a specific hotel
 router.get('/:hotelId/rooms', hotelController.getHotelRooms);
