@@ -9,24 +9,85 @@ This document describes the data sent and received by the backend API and the Mo
 ### Endpoints & Data
 
 
-#### 1. Hotels
-- **GET /hotels**
-  - **Receives:** None
-  - **Sends:** Array of hotel objects:
-    - `objectId`: string
-    - `name`: string
-    - `physical_address`: string
-    - `owner`: address
-    - `treasury`: number (SUI balance)
-    - `imageUrl`: string (image URL, dummy data seeded)
 
-- **POST /api/transactions/hotels/:hotelId/review**
+#### 1. Hotels
+- **GET /api/hotels/all**
+  - **Receives:** None
+  - **Sends:** Array of hotel objects (see below)
+- **GET /api/hotels/:hotelId**
+  - **Receives:** `hotelId` (URL param)
+  - **Sends:** Single hotel object
+- **GET /api/hotels/:hotelId/rooms**
+  - **Receives:** `hotelId` (URL param)
+  - **Sends:** Array of room objects for the hotel
+- **GET /api/hotels/:hotelId/reviews**
+  - **Receives:** `hotelId` (URL param)
+  - **Sends:** Array of review objects for the hotel
+- **POST /api/hotels/:hotelId/review**
   - **Receives:** `{ reservationId, guest, rating, comment }`
   - **Sends:** The created review object
+- **GET /api/hotels/reservations?guestAddress=...**
+  - **Receives:** `guestAddress` (query param)
+  - **Sends:** Array of reservation objects for the user
 
-- **GET /api/transactions/hotels/:hotelId/reviews**
-  - **Receives:** None
-  - **Sends:** Array of review objects for the hotel
+Hotel object fields:
+  - `objectId`: string
+  - `name`: string
+  - `physical_address`: string
+  - `owner`: address
+  - `treasury`: number (SUI balance)
+  - `imageUrl`: string (image URL)
+
+#### 2. Rooms
+- **GET /api/rooms/:roomId**
+  - **Receives:** `roomId` (URL param)
+  - **Sends:** Single room object
+- **GET /api/hotels/:hotelId/rooms**
+  - **Receives:** `hotelId` (URL param)
+  - **Sends:** Array of room objects for the hotel
+
+Room object fields:
+  - `objectId`: string
+  - `hotelId`: string
+  - `pricePerDay`: number
+  - `isBooked`: boolean
+  - `cloudinaryPublicId`: string
+  - `imageUrl`: string
+
+#### 3. Reservations
+- **GET /api/hotels/reservations?guestAddress=...**
+  - **Receives:** `guestAddress` (query param)
+  - **Sends:** Array of reservation objects
+
+Reservation object fields:
+  - `objectId`: string
+  - `room_id`: string
+  - `hotel_id`: string
+  - `guest_address`: address
+  - `start_date`: number
+  - `end_date`: number
+  - `total_cost`: number
+  - `is_active`: boolean
+
+#### 4. Transactions (POST endpoints)
+- **POST /api/transactions/create-hotel**
+  - **Receives:** `{ name, physicalAddress }` + image file (multipart, field name: `image`)
+  - **Sends:** `{ transactionBlock }` (serialized unsigned transaction)
+- **POST /api/transactions/list-room**
+  - **Receives:** `{ hotelId, pricePerDay }` + image file (multipart, field name: `image`)
+  - **Sends:** `{ transactionBlock }`
+- **POST /api/transactions/book-room**
+  - **Receives:** `{ roomId, hotelId, fullName, email, phone, startDate, endDate, paymentCoinId }`
+  - **Sends:** `{ transactionBlock }`
+- **POST /api/transactions/cancel-reservation**
+  - **Receives:** `{ reservationId, roomId, hotelId }`
+  - **Sends:** `{ transactionBlock }`
+- **POST /api/transactions/leave-review**
+  - **Receives:** `{ reservationId, hotelId, rating, comment }`
+  - **Sends:** `{ transactionBlock }`
+- **POST /api/transactions/reschedule-reservation**
+  - **Receives:** `{ reservationId, roomId, hotelId, newStartDate, newEndDate }`
+  - **Sends:** `{ transactionBlock }`
 
 > Dummy hotels, rooms, and reviews (with image URLs) are seeded by the database seeder scripts for development/testing.
 
