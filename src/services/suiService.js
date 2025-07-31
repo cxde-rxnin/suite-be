@@ -108,18 +108,15 @@ const listRoomTx = (hotelId, pricePerDay, imageUrl) => {
     return txb;
 };
 
-const bookRoomTx = ({ roomId, hotelId, fullName, email, phone, startDate, endDate, paymentCoinId }) => {
+const bookRoomTx = ({ roomId, hotelId, startDate, endDate, paymentCoinId }) => {
     const txb = new TransactionBlock();
     txb.moveCall({
         target: `${process.env.PACKAGE_ID}::hotel_booking::book_room`,
         arguments: [
             txb.object(roomId),
             txb.object(hotelId),
-            txb.pure(fullName),
-            txb.pure(email),
-            txb.pure(phone),
-            txb.pure(startDate), // as string
-            txb.pure(endDate),   // as string
+            txb.pure.u64(startDate),
+            txb.pure.u64(endDate),
             txb.object(paymentCoinId),
             txb.object(SUI_CLOCK_OBJECT_ID)
         ],
