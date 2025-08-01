@@ -42,12 +42,17 @@ const getAllHotels = async (req, res) => {
 const getHotel = async (req, res) => {
     try {
         const { hotelId } = req.params;
-        const hotel = await Hotel.findOne({ objectId: hotelId });
-        if (!hotel) return res.status(404).json({ error: 'Hotel not found' });
-        // Always include imageUrl
+        // Get hotel data from blockchain
+        const hotels = await getObjectDetails([hotelId]);
+        if (hotels.length === 0) return res.status(404).json({ error: 'Hotel not found' });
+        
+        const blockchainHotel = hotels[0];
+        // Get additional data from database (like imageUrl)
+        const dbHotel = await Hotel.findOne({ objectId: hotelId });
+        
         res.status(200).json({
-            ...hotel.toObject(),
-            imageUrl: hotel.imageUrl || null
+            ...blockchainHotel,
+            imageUrl: dbHotel ? dbHotel.imageUrl : null
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch hotel', details: error.message });

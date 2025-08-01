@@ -115,8 +115,8 @@ const bookRoomTx = ({ roomId, hotelId, startDate, endDate, paymentCoinId }) => {
         arguments: [
             txb.object(roomId),
             txb.object(hotelId),
-            txb.pure.u64(startDate),
-            txb.pure.u64(endDate),
+            txb.pure(startDate, 'u64'),
+            txb.pure(endDate, 'u64'),
             txb.object(paymentCoinId),
             txb.object(SUI_CLOCK_OBJECT_ID)
         ],
