@@ -110,13 +110,18 @@ const listRoomTx = (hotelId, pricePerDay, imageUrl) => {
 
 const bookRoomTx = ({ roomId, hotelId, startDate, endDate, paymentCoinId }) => {
     const txb = new TransactionBlock();
+    
+    // Convert date strings to Unix timestamps (seconds since epoch)
+    const startTimestamp = Math.floor(new Date(startDate).getTime() / 1000);
+    const endTimestamp = Math.floor(new Date(endDate).getTime() / 1000);
+    
     txb.moveCall({
         target: `${process.env.PACKAGE_ID}::hotel_booking::book_room`,
         arguments: [
             txb.object(roomId),
             txb.object(hotelId),
-            txb.pure(startDate, 'u64'),
-            txb.pure(endDate, 'u64'),
+            txb.pure(startTimestamp, 'u64'),
+            txb.pure(endTimestamp, 'u64'),
             txb.object(paymentCoinId),
             txb.object(SUI_CLOCK_OBJECT_ID)
         ],
