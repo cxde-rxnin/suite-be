@@ -1,154 +1,90 @@
 const { getProvider, getObjectDetails } = require('../services/suiService');
-
-// Get all Hotel objects shared on the network
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
+const Review = require('../models/Review');
 
-// Get all Hotel objects shared on the network
-const getAllHotels = async (req, res) => {
-    try {
-        const provider = getProvider();
-        // Workaround: Use events API to find all HotelCreated events, then fetch objects by ID
-        const events = await provider.queryEvents({
-            query: {
-                MoveModule: {
-                    package: process.env.PACKAGE_ID,
-                    module: 'hotel_booking',
-                },
-            },
-            limit: 1000, // adjust as needed
-        });
-        const hotelIds = events.data
-            .filter(e => e.type.endsWith('HotelCreated'))
-            .map(e => e.parsedJson.hotel_id || e.parsedJson.hotelId || e.parsedJson.id);
-        const hotels = await getObjectDetails(hotelIds);
-        // Attach imageUrl from DB if available
-        const dbHotels = await Hotel.find({ objectId: { $in: hotelIds } });
-        const hotelsWithImages = hotels.map(hotel => {
-            const dbHotel = dbHotels.find(h => h.objectId === hotel.objectId);
-            return {
-                ...hotel,
-                imageUrl: dbHotel ? dbHotel.imageUrl : null
-            };
-        });
-        res.status(200).json(hotelsWithImages);
-    } catch (error) {
-        console.error('Error fetching hotels:', error);
-        res.status(500).json({ error: 'Failed to fetch hotels', details: error.message });
-    }
+const isHexObjectId = (id) => /^0x[0-9a-fA-F]{64}$/i.test(id);
+
+const getAllHotels = async (_req, res) => {
+  try {
+    const provider = getProvider();
+    const events = await provider.queryEvents({
+      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },
+      limit: 1000,
+    });
+    const hotelIds = events.data.filter(e => e.type.endsWith('HotelCreated'))
+      .map(e => e.parsedJson.hotel_id || e.parsedJson.hotelId || e.parsedJson.id);
+    const hotels = await getObjectDetails(hotelIds);
+    const dbHotels = await Hotel.find({ objectId: { $in: hotelIds } });
+    const merged = hotels.map(h => {
+      const db = dbHotels.find(d => d.objectId === h.objectId);
+      return { ...h, imageUrl: db ? db.imageUrl : null };
+    });
+    res.json(merged);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch hotels', details: e.message });
+  }
 };
 
-// Get a single hotel by objectId
 const getHotel = async (req, res) => {
-    try {
-        const { hotelId } = req.params;
-        // Get hotel data from blockchain
-        const hotels = await getObjectDetails([hotelId]);
-        if (hotels.length === 0) return res.status(404).json({ error: 'Hotel not found' });
-        
-        const blockchainHotel = hotels[0];
-        // Get additional data from database (like imageUrl)
-        const dbHotel = await Hotel.findOne({ objectId: hotelId });
-        
-        res.status(200).json({
-            ...blockchainHotel,
-            imageUrl: dbHotel ? dbHotel.imageUrl : null
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch hotel', details: error.message });
-    }
-};
-
-// Get a single hotel room by objectId
-const getHotelRoom = async (req, res) => {
-    try {
-        const { roomId } = req.params;
-        const room = await Room.findOne({ objectId: roomId });
-        if (!room) return res.status(404).json({ error: 'Room not found' });
-        // Always include imageUrl
-        res.status(200).json({
-            ...room.toObject(),
-            imageUrl: room.imageUrl || null
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch room', details: error.message });
-    }
-};
-// ...existing code...
-
-// Get all rooms associated with a specific hotel
-const getHotelRooms = async (req, res) => {
+  try {
     const { hotelId } = req.params;
-    try {
-        const provider = getProvider();
-        
-        // Workaround: Use events API to find all RoomListed events, then fetch objects by ID
-        const events = await provider.queryEvents({
-            query: {
-                MoveModule: {
-                    package: process.env.PACKAGE_ID,
-                    module: 'hotel_booking',
-                },
-            },
-            limit: 1000, // adjust as needed
-        });
-        const roomIds = events.data
-            .filter(e => e.type.endsWith('RoomListed'))
-            .map(e => e.parsedJson.room_id || e.parsedJson.roomId || e.parsedJson.id);
-        const allRooms = await getObjectDetails(roomIds);
-        // Attach imageUrl from DB if available
-        const dbRooms = await Room.find({ hotelId });
-        const filteredRooms = allRooms.filter(room => room.hotel_id === hotelId).map(room => {
-            const dbRoom = dbRooms.find(r => r.objectId === room.objectId);
-            return {
-                ...room,
-                imageUrl: dbRoom ? dbRoom.imageUrl : null
-            };
-        });
-        res.status(200).json(filteredRooms);
-    } catch (error) {
-        console.error('Error fetching rooms:', error);
-        res.status(500).json({ error: 'Failed to fetch rooms', details: error.message });
+    if (hotelId === 'all') return getAllHotels(req, res);
+    if (!isHexObjectId(hotelId)) {
+      return res.status(400).json({ error: 'Invalid hotel id format' });
     }
+    const hotels = await getObjectDetails([hotelId]);
+    if (hotels.length === 0) return res.status(404).json({ error: 'Hotel not found' });
+    const db = await Hotel.findOne({ objectId: hotelId });
+    res.json({ ...hotels[0], imageUrl: db ? db.imageUrl : null });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch hotel', details: e.message });
+  }
 };
 
-// Get all reservations for a specific user
-const getUserReservations = async (req, res) => {
-    try {
-        const provider = getProvider();
-        
-        // Workaround: Use events API to find all RoomBooked events, then fetch objects by ID
-        const events = await provider.queryEvents({
-            query: {
-                MoveModule: {
-                    package: process.env.PACKAGE_ID,
-                    module: 'hotel_booking',
-                },
-            },
-            limit: 1000, // adjust as needed
-        });
-        const reservationIds = events.data
-            .filter(e => e.type.endsWith('RoomBooked'))
-            .map(e => e.parsedJson.reservation_id || e.parsedJson.reservationId || e.parsedJson.id);
-        const allReservations = await getObjectDetails(reservationIds);
-        const filteredReservations = allReservations.filter(reservation => 
-            reservation.guest_address === req.query.guestAddress
-        );
-        res.status(200).json(filteredReservations);
-    } catch (error) {
-        console.error('Error fetching reservations:', error);
-        res.status(500).json({ error: 'Failed to fetch reservations', details: error.message });
-    }
+const getHotelRoom = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const rooms = await getObjectDetails([roomId]);
+    if (rooms.length === 0) return res.status(404).json({ error: 'Room not found' });
+    const db = await Room.findOne({ objectId: roomId });
+    res.json({ ...rooms[0], imageUrl: db ? db.imageUrl : null });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch room', details: e.message });
+  }
 };
 
-const { reviewHotel, getHotelReviews } = require('./reviewController');
-
-module.exports = {
-    getAllHotels,
-    getHotel,
-    getHotelRoom,
-    getHotelRooms,
-    getUserReservations,
-    reviewHotel,
-    getHotelReviews
+const getHotelRooms = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+    const provider = getProvider();
+    const events = await provider.queryEvents({
+      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },
+      limit: 1000,
+    });
+    const roomIds = events.data.filter(e => e.type.endsWith('RoomListed'))
+      .map(e => e.parsedJson.room_id || e.parsedJson.roomId || e.parsedJson.id);
+    const allRooms = await getObjectDetails(roomIds);
+    const dbRooms = await Room.find({ hotelId });
+    const filtered = allRooms.filter(r => r.hotel_id === hotelId).map(r => {
+      const db = dbRooms.find(d => d.objectId === r.objectId);
+      return { ...r, imageUrl: db ? db.imageUrl : null };
+    });
+    res.json(filtered);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch rooms', details: e.message });
+  }
 };
+
+const getHotelReviews = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+    if (!hotelId) return res.status(400).json({ error: 'hotelId is required' });
+    const reviews = await Review.find({ hotelId }).sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch reviews', details: e.message });
+  }
+};
+
+module.exports = { getAllHotels, getHotel, getHotelRoom, getHotelRooms, getHotelReviews };
