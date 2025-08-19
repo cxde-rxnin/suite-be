@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const ReservationSchema = new mongoose.Schema({
     objectId: { type: String, required: true, unique: true, index: true },
     roomId: { type: String, required: true },
@@ -13,4 +13,4 @@ const ReservationSchema = new mongoose.Schema({
     totalCost: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
 });
-module.exports = mongoose.model('Reservation', ReservationSchema);
+export default mongoose.model('Reservation', ReservationSchema);

@@ -1,9 +1,10 @@
-const { SuiClient, getFullnodeUrl, SuiHTTPTransport } = require('@mysten/sui.js/client');
-const { Ed25519Keypair } = require('@mysten/sui.js/keypairs/ed25519');
-const { decodeSuiPrivateKey } = require('@mysten/sui.js/cryptography');
-const { TransactionBlock } = require('@mysten/sui.js/transactions');
-const { SUI_CLOCK_OBJECT_ID } = require('@mysten/sui.js/utils');
-require('dotenv').config();
+import { SuiClient, getFullnodeUrl, SuiHTTPTransport } from '@mysten/sui/client';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
+import { Transaction } from '@mysten/sui/transactions';
+import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const getProvider = () => new SuiClient({
   url: getFullnodeUrl(process.env.SUI_NETWORK || 'devnet'),
@@ -39,7 +40,7 @@ const getObjectDetails = async (objectIds) => {
 
 // Transaction builders
 const createHotelTx = (name, physicalAddress) => {
-  const txb = new TransactionBlock();
+  const txb = new Transaction();
   txb.moveCall({
     target: `${process.env.PACKAGE_ID}::hotel_booking::create_hotel`,
     arguments: [txb.pure(name), txb.pure(physicalAddress)],
@@ -125,7 +126,7 @@ const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate,
   return txb;
 };
 
-module.exports = {
+export {
   getProvider,
   getObjectDetails,
   executeTransaction,

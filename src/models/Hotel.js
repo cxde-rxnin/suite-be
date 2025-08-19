@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const HotelSchema = new mongoose.Schema({
   objectId: { type: String, required: true, unique: true, index: true },
   name: { type: String, required: true },
@@ -6,4 +6,4 @@ const HotelSchema = new mongoose.Schema({
   owner: { type: String, required: true, index: true },
   imageUrl: { type: String },
 });
-module.exports = mongoose.model('Hotel', HotelSchema);
+export default mongoose.model('Hotel', HotelSchema);

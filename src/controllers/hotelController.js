@@ -1,15 +1,13 @@
-const { getProvider, getObjectDetails } = require('../services/suiService');
-const Hotel = require('../models/Hotel');
-const Room = require('../models/Room');
-const Review = require('../models/Review');
-
+import { getProvider, getObjectDetails } from '../services/suiService.js';
+import Hotel from '../models/Hotel.js';
+import Room from '../models/Room.js';
+import Review from '../models/Review.js';
 const isHexObjectId = (id) => /^0x[0-9a-fA-F]{64}$/i.test(id);
-
 const getAllHotels = async (_req, res) => {
   try {
     const provider = getProvider();
     const events = await provider.queryEvents({
-      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },
+      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },  
       limit: 1000,
     });
     const hotelIds = events.data.filter(e => e.type.endsWith('HotelCreated'))
@@ -25,7 +23,6 @@ const getAllHotels = async (_req, res) => {
     res.status(500).json({ error: 'Failed to fetch hotels', details: e.message });
   }
 };
-
 const getHotel = async (req, res) => {
   try {
     const { hotelId } = req.params;
@@ -34,32 +31,30 @@ const getHotel = async (req, res) => {
       return res.status(400).json({ error: 'Invalid hotel id format' });
     }
     const hotels = await getObjectDetails([hotelId]);
-    if (hotels.length === 0) return res.status(404).json({ error: 'Hotel not found' });
+    if (hotels.length === 0) return res.status(404).json({ error: 'Hotel not found' });     
     const db = await Hotel.findOne({ objectId: hotelId });
     res.json({ ...hotels[0], imageUrl: db ? db.imageUrl : null });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch hotel', details: e.message });
   }
 };
-
 const getHotelRoom = async (req, res) => {
   try {
     const { roomId } = req.params;
     const rooms = await getObjectDetails([roomId]);
-    if (rooms.length === 0) return res.status(404).json({ error: 'Room not found' });
+    if (rooms.length === 0) return res.status(404).json({ error: 'Room not found' });       
     const db = await Room.findOne({ objectId: roomId });
     res.json({ ...rooms[0], imageUrl: db ? db.imageUrl : null });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch room', details: e.message });
   }
 };
-
 const getHotelRooms = async (req, res) => {
   try {
     const { hotelId } = req.params;
     const provider = getProvider();
     const events = await provider.queryEvents({
-      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },
+      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },  
       limit: 1000,
     });
     const roomIds = events.data.filter(e => e.type.endsWith('RoomListed'))
@@ -75,7 +70,6 @@ const getHotelRooms = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch rooms', details: e.message });
   }
 };
-
 const getHotelReviews = async (req, res) => {
   try {
     const { hotelId } = req.params;
@@ -86,5 +80,4 @@ const getHotelReviews = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch reviews', details: e.message });
   }
 };
-
-module.exports = { getAllHotels, getHotel, getHotelRoom, getHotelRooms, getHotelReviews };
+export { getAllHotels, getHotel, getHotelRoom, getHotelRooms, getHotelReviews };

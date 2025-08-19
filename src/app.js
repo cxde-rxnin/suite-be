@@ -1,33 +1,30 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import connectDB from './config/db.js';
+import hotelRoutes from './routes/hotelRoutes.js';
+import transactionRoutes from './routes/transactionRoutes.js';
+import bookingsRoutes from './routes/bookingsRoutes.js';
 
-const path = require('path');
-
-const connectDB = require('./config/db');
-const hotelRoutes = require('./routes/hotelRoutes');
-const transactionRoutes = require('./routes/transactionRoutes');
-
-// Connect to Database
+dotenv.config();
 connectDB();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Serve API documentation at /api/docs lets hope it doesnt crash again
 app.get('/api/docs', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(path.dirname(new URL(import.meta.url).pathname), 'index.html'));
 });
 
-// API Routes
 app.get('/', (req, res) => {
     res.send('Hotel Booking Backend API is running!');
 });
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/bookings', bookingsRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`API Server listening on port ${PORT}`));

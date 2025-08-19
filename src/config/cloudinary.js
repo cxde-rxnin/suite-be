@@ -1,6 +1,8 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-require('dotenv').config();
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Configure the cloudinary SDK with your credentials
 cloudinary.config({
@@ -19,7 +21,7 @@ const storage = new CloudinaryStorage({
     },
 });
 
-module.exports = {
+export {
     cloudinary,
     storage,
 };

@@ -1,6 +1,6 @@
-const multer = require('multer');
-const { storage } = require('../config/cloudinary');
-const {
+import multer from 'multer';
+import { storage } from '../config/cloudinary.js';
+import {
   createHotelTx,
   listRoomTx,
   bookRoomTx,
@@ -8,11 +8,11 @@ const {
   leaveReviewTx,
   rescheduleReservationTx,
   executeTransaction,
-} = require('../services/suiService');
-const Hotel = require('../models/Hotel');
-const Room = require('../models/Room');
-const Reservation = require('../models/Reservation');
-const Review = require('../models/Review');
+} from '../services/suiService.js';
+import Hotel from '../models/Hotel.js';
+import Room from '../models/Room.js';
+import Reservation from '../models/Reservation.js';
+import Review from '../models/Review.js';
 
 // Generic builder
 const buildTransaction = (builder) => async (req, res) => {
@@ -111,35 +111,64 @@ const executeListRoom = async (req, res) => {
 
 const executeBookRoom = async (req, res) => {
   try {
-    const { roomId, hotelId, startDate, endDate, paymentCoinId, fullName, email, phone, guestAddress, totalCost } = req.body;
-    if (!roomId || !hotelId || !startDate || !endDate || !paymentCoinId) {
+    const { roomId, hotelId, startDate, endDate, fullName, email, phone, guestAddress, totalCost } = req.body;
+    // Debug: print guestAddress
+    console.log('Booking request for address:', guestAddress);
+    // Get the SUI client (import before use)
+    const { client } = require('../services/suiService.mjs');
+    // Fetch all SUI coins for the user
+    const coins = await client.getCoins({ owner: guestAddress, coinType: '0x2::sui::SUI' });
+    // Debug: print all coin balances
+    console.log('All coin balances:', coins.data.map(coin => ({ id: coin.coinObjectId, balance: Number(coin.balance) / 1e9 })));
+    if (!roomId || !hotelId || !startDate || !endDate || !guestAddress) {
       return res.status(400).json({ error: 'Missing required booking fields' });
     }
+    const requiredAmount = totalCost * 1e9; // Convert to mist
+    if (coins.data.length === 0) {
+      return res.status(400).json({ error: 'No SUI coins found in wallet' });
+    }
+    // Calculate total balance
+    const totalBalance = coins.data.reduce((sum, coin) => sum + Number(coin.balance), 0);
+    if (totalBalance < requiredAmount) {
+      return res.status(400).json({ error: 'Insufficient SUI balance', required: requiredAmount / 1e9, available: totalBalance / 1e9 });
+    }
+    // Find the largest coin or merge coins if needed
+    let paymentCoinId;
+    const largestCoin = coins.data.reduce((max, coin) => Number(coin.balance) > Number(max.balance) ? coin : max);
+    if (Number(largestCoin.balance) >= requiredAmount) {
+      paymentCoinId = largestCoin.coinObjectId;
+    } else {
+      // If no single coin has enough, you might need to implement coin merging
+      // For now, return an error asking user to consolidate coins
+      return res.status(400).json({ error: 'No single coin has sufficient balance. Please consolidate your SUI coins first.', largestCoin: Number(largestCoin.balance) / 1e9, required: requiredAmount / 1e9 });
+    }
+
     const txb = bookRoomTx({ roomId, hotelId, startDate, endDate, paymentCoinId });
     const result = await executeTransaction(txb);
-    const reservationId = extractCreatedId(result); // assumes booking creates a reservation object
+    const reservationId = extractCreatedId(result);
     // Persist off-chain metadata
     if (reservationId) {
       await Reservation.updateOne(
         { objectId: reservationId },
         { $set: {
           objectId: reservationId,
-            roomId,
-            hotelId,
-            guestAddress: guestAddress || 'unknown',
-            fullName: fullName || 'N/A',
-            email: email || 'N/A',
-            phone: phone || 'N/A',
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            totalCost: Number(totalCost) || 0,
-            isActive: true,
+          roomId,
+          hotelId,
+          guestAddress: guestAddress || 'unknown',
+          fullName: fullName || 'N/A',
+          email: email || 'N/A',
+          phone: phone || 'N/A',
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          totalCost: Number(totalCost) || 0,
+          isActive: true,
         } },
         { upsert: true }
       );
     }
     res.json({ reservationId, digest: result.digest });
   } catch (e) {
+    console.error('Booking execution error:', e);
     res.status(500).json({ error: 'Failed to execute book room', details: e.message });
   }
 };
@@ -159,7 +188,7 @@ const executeLeaveReview = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   upload,
   buildCreateHotel,
   buildListRoom,
