@@ -5,20 +5,14 @@ import Review from '../models/Review.js';
 const isHexObjectId = (id) => /^0x[0-9a-fA-F]{64}$/i.test(id);
 const getAllHotels = async (_req, res) => {
   try {
-    const provider = getProvider();
-    const events = await provider.queryEvents({
-      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },  
-      limit: 1000,
-    });
-    const hotelIds = events.data.filter(e => e.type.endsWith('HotelCreated'))
-      .map(e => e.parsedJson.hotel_id || e.parsedJson.hotelId || e.parsedJson.id);
-    const hotels = await getObjectDetails(hotelIds);
-    const dbHotels = await Hotel.find({ objectId: { $in: hotelIds } });
-    const merged = hotels.map(h => {
-      const db = dbHotels.find(d => d.objectId === h.objectId);
-      return { ...h, imageUrl: db ? db.imageUrl : null };
-    });
-    res.json(merged);
+    const owner = _req.query.owner || _req.params.ownerAddress;
+    let dbHotels;
+    if (owner) {
+      dbHotels = await Hotel.find({ owner });
+    } else {
+      dbHotels = await Hotel.find();
+    }
+    res.json(dbHotels);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch hotels', details: e.message });
   }

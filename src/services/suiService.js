@@ -21,9 +21,9 @@ const getAdminSigner = () => {
 const executeTransaction = async (txb) => {
   const signer = getAdminSigner();
   const provider = getProvider();
-  return provider.signAndExecuteTransactionBlock({
+  return provider.signAndExecuteTransaction({
     signer,
-    transactionBlock: txb,
+    transaction: txb,
     options: { showEffects: true, showObjectChanges: true, showEvents: true },
   });
 };
@@ -43,26 +43,29 @@ const createHotelTx = (name, physicalAddress) => {
   const txb = new Transaction();
   txb.moveCall({
     target: `${process.env.PACKAGE_ID}::hotel_booking::create_hotel`,
-    arguments: [txb.pure(name), txb.pure(physicalAddress)],
+    arguments: [
+      txb.pure.string(name),           // Fixed: use txb.pure.string() instead of txb.pure(name, 'String')
+      txb.pure.string(physicalAddress), // Fixed: use txb.pure.string() instead of txb.pure(physicalAddress, 'String')
+    ],
   });
   return txb;
 };
 
 const listRoomTx = (hotelId, pricePerDay, imageUrl) => {
-  const txb = new TransactionBlock();
+  const txb = new Transaction();
   txb.moveCall({
     target: `${process.env.PACKAGE_ID}::hotel_booking::list_room`,
     arguments: [
       txb.object(hotelId),
-      txb.pure(pricePerDay),
-      txb.pure(imageUrl || ''),
+      txb.pure.u64(pricePerDay),        // Fixed: use txb.pure.u64() for numbers
+      txb.pure.string(imageUrl || ''),  // Fixed: use txb.pure.string() for strings
     ],
   });
   return txb;
 };
 
 const bookRoomTx = ({ roomId, hotelId, startDate, endDate, paymentCoinId }) => {
-  const txb = new TransactionBlock();
+  const txb = new Transaction();
   const startTs = Math.floor(new Date(startDate).getTime() / 1000);
   const endTs = Math.floor(new Date(endDate).getTime() / 1000);
   txb.moveCall({
@@ -70,8 +73,8 @@ const bookRoomTx = ({ roomId, hotelId, startDate, endDate, paymentCoinId }) => {
     arguments: [
       txb.object(roomId),
       txb.object(hotelId),
-      txb.pure(startTs, 'u64'),
-      txb.pure(endTs, 'u64'),
+      txb.pure.u64(startTs),           // Fixed: use txb.pure.u64() for timestamps
+      txb.pure.u64(endTs),             // Fixed: use txb.pure.u64() for timestamps
       txb.object(paymentCoinId),
       txb.object(SUI_CLOCK_OBJECT_ID),
     ],
@@ -80,7 +83,7 @@ const bookRoomTx = ({ roomId, hotelId, startDate, endDate, paymentCoinId }) => {
 };
 
 const cancelReservationTx = ({ reservationId, roomId, hotelId }) => {
-  const txb = new TransactionBlock();
+  const txb = new Transaction();
   txb.moveCall({
     target: `${process.env.PACKAGE_ID}::hotel_booking::cancel_reservation`,
     arguments: [
@@ -94,14 +97,14 @@ const cancelReservationTx = ({ reservationId, roomId, hotelId }) => {
 };
 
 const leaveReviewTx = ({ reservationId, hotelId, rating, comment }) => {
-  const txb = new TransactionBlock();
+  const txb = new Transaction();
   txb.moveCall({
     target: `${process.env.PACKAGE_ID}::hotel_booking::leave_review`,
     arguments: [
       txb.object(reservationId),
       txb.object(hotelId),
-      txb.pure(rating),
-      txb.pure(comment),
+      txb.pure.u8(rating),              // Fixed: use txb.pure.u8() for rating (assuming 0-255 range)
+      txb.pure.string(comment),         // Fixed: use txb.pure.string() for comment
       txb.object(SUI_CLOCK_OBJECT_ID),
     ],
   });
@@ -109,7 +112,7 @@ const leaveReviewTx = ({ reservationId, hotelId, rating, comment }) => {
 };
 
 const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate, newEndDate }) => {
-  const txb = new TransactionBlock();
+  const txb = new Transaction();
   const newStartTs = Math.floor(new Date(newStartDate).getTime() / 1000);
   const newEndTs = Math.floor(new Date(newEndDate).getTime() / 1000);
   txb.moveCall({
@@ -118,13 +121,16 @@ const rescheduleReservationTx = ({ reservationId, roomId, hotelId, newStartDate,
       txb.object(reservationId),
       txb.object(roomId),
       txb.object(hotelId),
-      txb.pure(newStartTs, 'u64'),
-      txb.pure(newEndTs, 'u64'),
+      txb.pure.u64(newStartTs),         // Fixed: use txb.pure.u64() for timestamps
+      txb.pure.u64(newEndTs),           // Fixed: use txb.pure.u64() for timestamps
       txb.object(SUI_CLOCK_OBJECT_ID),
     ],
   });
   return txb;
 };
+
+// Export the client for use in other modules
+export const client = getProvider();
 
 export {
   getProvider,

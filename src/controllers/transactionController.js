@@ -72,7 +72,7 @@ const extractCreatedId = (result) => {
 const executeCreateHotel = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Image file is required.' });
-    const { name, physicalAddress, owner } = req.body;
+    const { name, physicalAddress, owner, description, amenities } = req.body;
     const txb = createHotelTx(name, physicalAddress);
     const result = await executeTransaction(txb);
     const hotelId = extractCreatedId(result);
@@ -80,13 +80,21 @@ const executeCreateHotel = async (req, res) => {
     if (owner) {
       await Hotel.updateOne(
         { objectId: hotelId },
-        { $set: { objectId: hotelId, name, physicalAddress, owner, imageUrl: req.file.path } },
+        { $set: {
+          objectId: hotelId,
+          name,
+          physicalAddress,
+          owner,
+          imageUrl: req.file.path,
+          description: description || '',
+          amenities: amenities || [],
+        } },
         { upsert: true }
       );
     }
-    res.json({ hotelId, name, physicalAddress, owner: owner || null, imageUrl: req.file.path, digest: result.digest });
+    res.json({ hotelId, name, physicalAddress, owner: owner || null, imageUrl: req.file.path, description, amenities, digest: result.digest });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to execute create hotel', details: e.message });
+    res.status(500).json({ error: 'Failed to execute create hotel', details: e.message, stack: e.stack });
   }
 };
 

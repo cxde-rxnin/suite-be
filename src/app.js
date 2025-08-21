@@ -6,6 +6,7 @@ import connectDB from './config/db.js';
 import hotelRoutes from './routes/hotelRoutes.js';
 import transactionRoutes from './routes/transactionRoutes.js';
 import bookingsRoutes from './routes/bookingsRoutes.js';
+import reservationsRoutes from './routes/reservationsRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/bookings', bookingsRoutes);
+app.use('/api/reservations', reservationsRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`API Server listening on port ${PORT}`));
