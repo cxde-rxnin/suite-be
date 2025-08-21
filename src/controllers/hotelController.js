@@ -2,7 +2,9 @@ import { getProvider, getObjectDetails } from '../services/suiService.js';
 import Hotel from '../models/Hotel.js';
 import Room from '../models/Room.js';
 import Review from '../models/Review.js';
+
 const isHexObjectId = (id) => /^0x[0-9a-fA-F]{64}$/i.test(id);
+
 const getAllHotels = async (_req, res) => {
   try {
     const owner = _req.query.owner || _req.params.ownerAddress;
@@ -17,6 +19,7 @@ const getAllHotels = async (_req, res) => {
     res.status(500).json({ error: 'Failed to fetch hotels', details: e.message });
   }
 };
+
 const getHotel = async (req, res) => {
   try {
     const { hotelId } = req.params;
@@ -32,6 +35,7 @@ const getHotel = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch hotel', details: e.message });
   }
 };
+
 const getHotelRoom = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -43,27 +47,24 @@ const getHotelRoom = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch room', details: e.message });
   }
 };
+
 const getHotelRooms = async (req, res) => {
   try {
     const { hotelId } = req.params;
-    const provider = getProvider();
-    const events = await provider.queryEvents({
-      query: { MoveModule: { package: process.env.PACKAGE_ID, module: 'hotel_booking' } },  
-      limit: 1000,
-    });
-    const roomIds = events.data.filter(e => e.type.endsWith('RoomListed'))
-      .map(e => e.parsedJson.room_id || e.parsedJson.roomId || e.parsedJson.id);
-    const allRooms = await getObjectDetails(roomIds);
-    const dbRooms = await Room.find({ hotelId });
-    const filtered = allRooms.filter(r => r.hotel_id === hotelId).map(r => {
-      const db = dbRooms.find(d => d.objectId === r.objectId);
-      return { ...r, imageUrl: db ? db.imageUrl : null };
-    });
-    res.json(filtered);
+    
+    if (!hotelId) {
+      return res.status(400).json({ error: 'hotelId is required' });
+    }
+
+    const rooms = await Room.find({ hotelId }).sort({ createdAt: -1 });
+    res.json(rooms);
+
   } catch (e) {
+    console.error('Error in getHotelRooms:', e);
     res.status(500).json({ error: 'Failed to fetch rooms', details: e.message });
   }
 };
+
 const getHotelReviews = async (req, res) => {
   try {
     const { hotelId } = req.params;
@@ -74,4 +75,5 @@ const getHotelReviews = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch reviews', details: e.message });
   }
 };
+
 export { getAllHotels, getHotel, getHotelRoom, getHotelRooms, getHotelReviews };

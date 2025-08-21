@@ -101,18 +101,113 @@ const executeCreateHotel = async (req, res) => {
 const executeListRoom = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Image file is required.' });
-    const { hotelId, pricePerDay } = req.body;
+    // Extract all fields from req.body
+    const {
+      hotelId,
+      pricePerDay,
+      name,
+      roomNumber,
+      type,
+      description,
+      maxGuests,
+      maxAdults,
+      maxChildren,
+      baseGuestCount,
+      bedConfiguration,
+      roomSize,
+      bathrooms,
+      floor,
+      view,
+      extraGuestFee,
+      amenities,
+      perks,
+      isAccessible,
+      accessibilityFeatures,
+      smokingAllowed,
+      petsAllowed
+    } = req.body;
+
+    // Debug logging
+    console.log('List Room Debug:', {
+      hotelId,
+      pricePerDay,
+      imagePath: req.file.path,
+      name,
+      roomNumber,
+      type,
+      description,
+      maxGuests,
+      maxAdults,
+      maxChildren,
+      baseGuestCount,
+      bedConfiguration,
+      roomSize,
+      bathrooms,
+      floor,
+      view,
+      extraGuestFee,
+      amenities,
+      perks,
+      isAccessible,
+      accessibilityFeatures,
+      smokingAllowed,
+      petsAllowed
+    });
+
+    // Blockchain transaction (only hotelId, pricePerDay, image)
     const txb = listRoomTx(hotelId, Number(pricePerDay), req.file.path);
     const result = await executeTransaction(txb);
     const roomId = extractCreatedId(result);
     if (!roomId) return res.status(500).json({ error: 'Could not determine created room id' });
+
+    // Parse arrays/objects if sent as JSON strings
+    let bedConfigParsed = bedConfiguration;
+    let amenitiesParsed = amenities;
+    let perksParsed = perks;
+    let accessibilityParsed = accessibilityFeatures;
+    try {
+      if (typeof bedConfiguration === 'string') bedConfigParsed = JSON.parse(bedConfiguration);
+      if (typeof amenities === 'string') amenitiesParsed = JSON.parse(amenities);
+      if (typeof perks === 'string') perksParsed = JSON.parse(perks);
+      if (typeof accessibilityFeatures === 'string') accessibilityParsed = JSON.parse(accessibilityFeatures);
+    } catch (e) {}
+
+    // Save all fields to MongoDB
     await Room.updateOne(
       { objectId: roomId },
-      { $set: { objectId: roomId, hotelId, pricePerDay: Number(pricePerDay), imageUrl: req.file.path } },
+      {
+        $set: {
+          objectId: roomId,
+          hotelId,
+          pricePerDay: Number(pricePerDay),
+          name,
+          roomNumber,
+          type,
+          description,
+          maxGuests: Number(maxGuests),
+          maxAdults: Number(maxAdults),
+          maxChildren: Number(maxChildren),
+          baseGuestCount: Number(baseGuestCount),
+          bedConfiguration: bedConfigParsed,
+          roomSize: Number(roomSize),
+          bathrooms: Number(bathrooms),
+          floor: Number(floor),
+          view,
+          extraGuestFee: Number(extraGuestFee),
+          amenities: amenitiesParsed,
+          perks: perksParsed,
+          isAccessible: isAccessible === 'true' || isAccessible === true,
+          accessibilityFeatures: accessibilityParsed,
+          smokingAllowed: smokingAllowed === 'true' || smokingAllowed === true,
+          petsAllowed: petsAllowed === 'true' || petsAllowed === true,
+          images: [{ cloudinaryPublicId: '', imageUrl: req.file.path }],
+        }
+      },
       { upsert: true }
     );
     res.json({ roomId, hotelId, pricePerDay: Number(pricePerDay), imageUrl: req.file.path, digest: result.digest });
   } catch (e) {
+    console.error('List Room Error:', e);
     res.status(500).json({ error: 'Failed to execute list room', details: e.message });
   }
 };
