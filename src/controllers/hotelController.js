@@ -1,79 +1,139 @@
-import { getProvider, getObjectDetails } from '../services/suiService.js';
-import Hotel from '../models/Hotel.js';
-import Room from '../models/Room.js';
-import Review from '../models/Review.js';
+import mongoose from "mongoose";
+import Hotel from "../models/Hotel.js";
+import Room from "../models/Room.js";
+import Review from "../models/Review.js";
 
-const isHexObjectId = (id) => /^0x[0-9a-fA-F]{64}$/i.test(id);
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-const getAllHotels = async (_req, res) => {
+// Get all hotels (optionally by owner)
+const getAllHotels = async (req, res) => {
   try {
-    const owner = _req.query.owner || _req.params.ownerAddress;
-    let dbHotels;
-    if (owner) {
-      dbHotels = await Hotel.find({ owner });
-    } else {
-      dbHotels = await Hotel.find();
-    }
+    const owner = req.query.owner || req.params.ownerAddress;
+    const query = owner ? { owner } : {};
+
+    const dbHotels = await Hotel.find(query).sort({ createdAt: -1 });
     res.json(dbHotels);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch hotels', details: e.message });
+    console.error("Error in getAllHotels:", e);
+    res.status(500).json({ error: "Failed to fetch hotels", details: e.message });
   }
 };
 
+// Get a single hotel by ID or objectId
 const getHotel = async (req, res) => {
   try {
     const { hotelId } = req.params;
-    if (hotelId === 'all') return getAllHotels(req, res);
-    if (!isHexObjectId(hotelId)) {
-      return res.status(400).json({ error: 'Invalid hotel id format' });
-    }
-    const hotels = await getObjectDetails([hotelId]);
-    if (hotels.length === 0) return res.status(404).json({ error: 'Hotel not found' });     
-    const db = await Hotel.findOne({ objectId: hotelId });
-    res.json({ ...hotels[0], imageUrl: db ? db.imageUrl : null });
+
+    if (hotelId === "all") return getAllHotels(req, res);
+    if (!hotelId) return res.status(400).json({ error: "Hotel ID is required" });
+
+    const hotel = isValidObjectId(hotelId)
+      ? await Hotel.findById(hotelId)
+      : await Hotel.findOne({ objectId: hotelId });
+
+    if (!hotel) return res.status(404).json({ error: "Hotel not found" });
+
+    res.json(hotel);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch hotel', details: e.message });
+    console.error("Error in getHotel:", e);
+    res.status(500).json({ error: "Failed to fetch hotel", details: e.message });
   }
 };
 
+// Get a single room by ID or objectId
 const getHotelRoom = async (req, res) => {
   try {
     const { roomId } = req.params;
-    const rooms = await getObjectDetails([roomId]);
-    if (rooms.length === 0) return res.status(404).json({ error: 'Room not found' });       
-    const db = await Room.findOne({ objectId: roomId });
-    res.json({ ...rooms[0], imageUrl: db ? db.imageUrl : null });
+    if (!roomId) return res.status(400).json({ error: "Room ID is required" });
+
+    const room = isValidObjectId(roomId)
+      ? await Room.findById(roomId)
+      : await Room.findOne({ objectId: roomId });
+
+    if (!room) return res.status(404).json({ error: "Room not found" });
+
+    res.json(room);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch room', details: e.message });
+    console.error("Error in getHotelRoom:", e);
+    res.status(500).json({ error: "Failed to fetch room", details: e.message });
   }
 };
 
+// Get all rooms for a hotel
 const getHotelRooms = async (req, res) => {
   try {
     const { hotelId } = req.params;
-    
-    if (!hotelId) {
-      return res.status(400).json({ error: 'hotelId is required' });
+    if (!hotelId) return res.status(400).json({ error: "hotelId is required" });
+
+    let objectIdToUse = hotelId;
+
+    // If hotelId is a Mongo _id → fetch the Hotel and get its objectId
+    if (isValidObjectId(hotelId)) {
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) return res.status(404).json({ error: "Hotel not found" });
+      if (!hotel.objectId) {
+        return res.status(500).json({ error: "Hotel objectId is missing" });
+      }
+      objectIdToUse = hotel.objectId;
     }
 
-    const rooms = await Room.find({ hotelId }).sort({ createdAt: -1 });
-    res.json(rooms);
+    // Try to fetch rooms using hotelObjectId first
+    let rooms = await Room.find({ hotelObjectId: objectIdToUse }).sort({ createdAt: -1 });
+    
+    // If no rooms found, try using hotelId field as fallback
+    if (rooms.length === 0) {
+      console.log(`No rooms found with hotelObjectId: ${objectIdToUse}, trying hotelId field...`);
+      rooms = await Room.find({ hotelId: objectIdToUse }).sort({ createdAt: -1 });
+      
+      // If still no rooms, try with the original hotelId parameter
+      if (rooms.length === 0 && objectIdToUse !== hotelId) {
+        console.log(`No rooms found with hotelId: ${objectIdToUse}, trying original hotelId: ${hotelId}...`);
+        rooms = await Room.find({ 
+          $or: [
+            { hotelId: hotelId },
+            { hotelObjectId: hotelId }
+          ]
+        }).sort({ createdAt: -1 });
+      }
+    }
 
+    res.json(rooms);
   } catch (e) {
-    console.error('Error in getHotelRooms:', e);
-    res.status(500).json({ error: 'Failed to fetch rooms', details: e.message });
+    console.error("Error in getHotelRooms:", e);
+    res.status(500).json({ error: "Failed to fetch rooms", details: e.message });
   }
 };
 
+// Get all reviews for a hotel
 const getHotelReviews = async (req, res) => {
   try {
     const { hotelId } = req.params;
-    if (!hotelId) return res.status(400).json({ error: 'hotelId is required' });
-    const reviews = await Review.find({ hotelId }).sort({ createdAt: -1 });
+    if (!hotelId) return res.status(400).json({ error: "hotelId is required" });
+
+    let objectIdToUse = hotelId;
+
+    if (isValidObjectId(hotelId)) {
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) return res.status(404).json({ error: "Hotel not found" });
+      if (!hotel.objectId) {
+        return res.status(500).json({ error: "Hotel objectId is missing" });
+      }
+      objectIdToUse = hotel.objectId;
+    }
+
+    const reviews = await Review.find({ hotelObjectId: objectIdToUse }).sort({ createdAt: -1 });
+
     res.json(reviews);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch reviews', details: e.message });
+    console.error("Error in getHotelReviews:", e);
+    res.status(500).json({ error: "Failed to fetch reviews", details: e.message });
   }
 };
 
-export { getAllHotels, getHotel, getHotelRoom, getHotelRooms, getHotelReviews };
+export {
+  getAllHotels,
+  getHotel,
+  getHotelRoom,
+  getHotelRooms,
+  getHotelReviews
+};

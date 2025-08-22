@@ -173,12 +173,25 @@ const executeListRoom = async (req, res) => {
     } catch (e) {}
 
     // Save all fields to MongoDB
+    // hotelId should be MongoDB _id, hotelObjectId should be Sui objectId
+    let mongoHotelId = hotelId;
+    let suiHotelObjectId = hotelId;
+    // Try to resolve MongoDB _id and Sui objectId from hotelId
+    // If hotelId is a Sui objectId, look up the hotel in MongoDB
+    if (hotelId && hotelId.length === 66 && hotelId.startsWith('0x')) {
+      const hotelDoc = await Hotel.findOne({ objectId: hotelId });
+      if (hotelDoc) {
+        mongoHotelId = hotelDoc._id.toString();
+        suiHotelObjectId = hotelDoc.objectId;
+      }
+    }
     await Room.updateOne(
       { objectId: roomId },
       {
         $set: {
           objectId: roomId,
-          hotelId,
+          hotelId: mongoHotelId,
+          hotelObjectId: suiHotelObjectId,
           pricePerDay: Number(pricePerDay),
           name,
           roomNumber,

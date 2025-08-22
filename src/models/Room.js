@@ -17,6 +17,7 @@ const RoomSchema = new mongoose.Schema({
     // Core identifiers
     objectId: { type: String, required: true, unique: true, index: true },
     hotelId: { type: String, required: true, index: true },
+    hotelObjectId: { type: String, required: true, index: true }, // Sui objectId for querying
     roomNumber: { type: String, required: true },
     
     // Basic room info
