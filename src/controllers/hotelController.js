@@ -1,3 +1,44 @@
+// Get a single room by hotelId and roomId, ensuring the room belongs to the hotel
+const getHotelRoomScoped = async (req, res) => {
+  try {
+    const { hotelId, roomId } = req.params;
+    if (!hotelId || !roomId) return res.status(400).json({ error: "Hotel ID and Room ID are required" });
+
+    // Find hotel by objectId or _id
+    let hotel;
+    if (isValidObjectId(hotelId)) {
+      hotel = await Hotel.findById(hotelId);
+    } else {
+      hotel = await Hotel.findOne({ objectId: hotelId });
+    }
+    if (!hotel) return res.status(404).json({ error: "Hotel not found" });
+
+    // Find room by objectId or _id
+    let room;
+    if (isValidObjectId(roomId)) {
+      room = await Room.findById(roomId);
+    } else {
+      room = await Room.findOne({ objectId: roomId });
+    }
+    if (!room) return res.status(404).json({ error: "Room not found" });
+
+    // Check if room belongs to hotel
+    const hotelObjectId = hotel.objectId || hotel._id?.toString();
+    if (
+      room.hotelObjectId === hotelObjectId ||
+      room.hotelId === hotelObjectId ||
+      room.hotelId === hotelId ||
+      room.hotelObjectId === hotelId
+    ) {
+      return res.json(room);
+    } else {
+      return res.status(404).json({ error: "Room does not belong to this hotel" });
+    }
+  } catch (e) {
+    console.error("Error in getHotelRoomScoped:", e);
+    res.status(500).json({ error: "Failed to fetch room for hotel", details: e.message });
+  }
+};
 import mongoose from "mongoose";
 import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
@@ -135,5 +176,6 @@ export {
   getHotel,
   getHotelRoom,
   getHotelRooms,
-  getHotelReviews
+  getHotelReviews,
+  getHotelRoomScoped
 };

@@ -13,6 +13,9 @@ router.get('/all', getAllHotels);
 router.get('/', getAllHotels);
 router.get('/owner/:ownerAddress', getAllHotels);
 router.get('/:hotelId/rooms', getHotelRooms);
+// Get a single room by hotel and room id
+router.get('/:hotelId/rooms/:roomId', getHotelRoomScoped);
+import { getHotelRoomScoped } from '../controllers/hotelController.js';
 router.get('/:hotelId/reviews', getHotelReviews);
 router.get('/room/:roomId', getHotelRoom);
 
